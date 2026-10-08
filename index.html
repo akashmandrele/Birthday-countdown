@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Countdown & Wishes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Sacramento&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .handwriting {
+            font-family: 'Sacramento', cursive;
+        }
+
+        /* Glassmorphism Effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Floating Balloons Animation */
+        .balloon-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .balloon {
+            position: absolute;
+            bottom: -100px;
+            opacity: 0.85;
+            animation: floatUp 8s ease-in-out infinite;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.85;
+            }
+            50% {
+                transform: translateY(-50vh) rotate(15deg);
+            }
+            100% {
+                transform: translateY(-110vh) rotate(-15deg);
+                opacity: 0;
+            }
+        }
+
+        /* Pulsing Glow Effect */
+        .glow-text {
+            text-shadow: 0 0 15px rgba(236, 72, 153, 0.6), 0 0 30px rgba(168, 85, 247, 0.4);
+        }
+
+        /* Flip Card Styling */
+        .flip-card {
+            perspective: 1000px;
+        }
+
+        .flip-card-inner {
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front, .flip-card-back {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen relative justify-between">
+
+    <div id="balloonContainer" class="balloon-container"></div>
+
+    <header class="w-full p-4 flex justify-between items-center z-10 max-w-5xl mx-auto">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl text-pink-500"><i class="fa-solid fa-cake-candles"></i></span>
+            <span class="font-bold text-lg tracking-wider bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">B-Day Magic</span>
+        </div>
+        <button id="toggleSetupBtn" onclick="toggleSetupModal()" class="glass-card px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20 transition flex items-center space-x-2 text-pink-300">
+            <i class="fa-solid fa-gear"></i>
+            <span>Customize</span>
+        </button>
+    </header>
+
+    <main class="container mx-auto px-4 py-6 flex-grow flex flex-col items-center justify-center z-10 relative">
+
+        <!-- Countdown View -->
+        <div id="countdownView" class="w-full max-w-2xl text-center space-y-8">
+            <div class="space-y-2">
+                <p class="text-sm uppercase tracking-widest text-pink-400 font-semibold">Counting down to</p>
+                <h1 id="displayName" class="text-4xl md:text-6xl font-extrabold text-white glow-text leading-tight">Celebration Time!</h1>
+                <p id="displayDateText" class="text-slate-300 text-sm md:text-base"></p>
+            </div>
+
+            <!-- Countdown Timer Blocks -->
+            <div class="grid grid-cols-4 gap-3 md:gap-6 max-w-lg mx-auto">
+                <div class="glass-card p-3 md:p-5 rounded-2xl flex flex-col items-center justify-center">
+                    <span id="days" class="text-2xl md:text-5xl font-bold text-pink-400">00</span>
+                    <span class="text-xs md:text-sm text-slate-400 font-medium uppercase mt-1">Days</span>
+                </div>
+                <div class="glass-card p-3 md:p-5 rounded-2xl flex flex-col items-center justify-center">
+                    <span id="hours" class="text-2xl md:text-5xl font-bold text-purple-400">00</span>
+                    <span class="text-xs md:text-sm text-slate-400 font-medium uppercase mt-1">Hours</span>
+                </div>
+                <div class="glass-card p-3 md:p-5 rounded-2xl flex flex-col items-center justify-center">
+                    <span id="minutes" class="text-2xl md:text-5xl font-bold text-indigo-400">00</span>
+                    <span class="text-xs md:text-sm text-slate-400 font-medium uppercase mt-1">Mins</span>
+                </div>
+                <div class="glass-card p-3 md:p-5 rounded-2xl flex flex-col items-center justify-center">
+                    <span id="seconds" class="text-2xl md:text-5xl font-bold text-sky-400">00</span>
+                    <span class="text-xs md:text-sm text-slate-400 font-medium uppercase mt-1">Secs</span>
+                </div>
+            </div>
+
+            <!-- Share & Action Buttons -->
+            <div class="flex flex-wrap justify-center gap-4 pt-4">
+                <button onclick="copyShareableLink()" class="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-6 py-3 rounded-full font-semibold shadow-lg shadow-pink-500/30 transition duration-300 flex items-center space-x-2 transform hover:scale-105 active:scale-95">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span>Share This Link</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="wishView" class="hidden w-full max-w-lg text-center space-y-6">
+            <div class="space-y-2">
+                <h1 class="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-purple-400 glow-text animate-pulse">
+                    Happy Birthday!
+                </h1>
+                <h2 id="wishName" class="text-3xl md:text-4xl font-bold text-white"></h2>
+            </div>
+
+            <!-- Interactive Flip Greetings Card -->
+            <div id="cardFlip" class="flip-card w-full h-80 cursor-pointer" onclick="toggleCardFlip()">
+                <div class="flip-card-inner relative w-full h-full rounded-2xl shadow-2xl">
+                    <!-- Front Card -->
+                    <div class="flip-card-front absolute w-full h-full glass-card rounded-2xl p-6 flex flex-col justify-center items-center space-y-4 border border-pink-500/30">
+                        <div class="text-6xl text-pink-400 animate-bounce"><i class="fa-solid fa-gift"></i></div>
+                        <h3 class="text-2xl font-semibold text-white">You've Got a Birthday Wish!</h3>
+                        <p class="text-sm text-pink-200">Tap anywhere on this card to open your wish <i class="fa-solid fa-sparkles"></i></p>
+                    </div>
+
+                    <!-- Back Card Message -->
+                    <div class="flip-card-back absolute w-full h-full glass-card rounded-2xl p-6 flex flex-col justify-between items-center text-center bg-slate-900/90 border border-purple-500/30">
+                        <i class="fa-solid fa-quote-left text-pink-400 text-2xl self-start"></i>
+                        <p id="wishMessageDisplay" class="handwriting text-2xl md:text-3xl text-pink-200 leading-relaxed px-2">
+                            Wishing you a fantastic day filled with laughter, love, and sweet surprises! May all your dreams come true!
+                        </p>
+                        <i class="fa-solid fa-quote-right text-pink-400 text-2xl self-end"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-center space-x-4 pt-2">
+                <button onclick="triggerCelebrationEffects()" class="bg-gradient-to-r from-yellow-400 to-pink-500 text-slate-900 font-bold px-6 py-3 rounded-full shadow-lg hover:brightness-110 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Celebrate Again!</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="setupModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-card bg-slate-900/90 w-full max-w-md p-6 rounded-2xl border border-white/20 space-y-5">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-pink-400"></i> Customize Countdown
+                </h3>
+                <button onclick="toggleSetupModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+
+            <form id="setupForm" onsubmit="saveCustomization(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Birthday Person's Name</label>
+                    <input type="text" id="inputName" required placeholder="e.g. Alex" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-pink-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Date of Birth & Time</label>
+                    <input type="datetime-local" id="inputDate" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-pink-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Custom Wish Message</label>
+                    <textarea id="inputMessage" rows="3" placeholder="Enter a special wish message..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-pink-500"></textarea>
+                </div>
+
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="toggleSetupModal()" class="w-1/2 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-medium hover:bg-white/5 transition">Cancel</button>
+                    <button type="submit" class="w-1/2 bg-pink-500 hover:bg-pink-600 text-white font-medium py-2.5 rounded-xl shadow-lg transition">Save & Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-2xl border border-pink-500/40 flex items-center space-x-3 transition-all duration-300 opacity-0 translate-y-10 pointer-events-none z-50">
+        <i class="fa-solid fa-circle-check text-pink-400 text-lg"></i>
+        <span id="toastMsg" class="text-sm font-medium">Link copied to clipboard!</span>
+    </div>
+
+    <footer class="w-full p-4 text-center text-xs text-slate-500 z-10">
+        Created with ❤️ for special celebrations
+    </footer>
+
+    <script>
+        // Global State
+        let targetDate = null;
+        let recipientName = "Someone Special";
+        let wishMessage = "Wishing you a joyful day filled with laughter, love, and fantastic memories!";
+        let countdownInterval = null;
+        let confettiInterval = null;
+
+        // Initialize Web Audio API for celebrations
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playCelebrationSound() {
+            try {
+                if (!audioCtx) audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+                notes.forEach((freq, index) => {
+                    setTimeout(() => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.4);
+                    }, index * 120);
+                });
+            } catch (e) {
+                console.log("Audio play error:", e);
+            }
+        }
+
+        // Initialize App on Load
+        window.onload = function() {
+            parseURLParameters();
+            initBalloons();
+            startCountdown();
+        };
+
+        // Parse query params from URL
+        function parseURLParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const nameParam = urlParams.get('name');
+            const dobParam = urlParams.get('dob');
+            const msgParam = urlParams.get('msg');
+
+            if (nameParam) recipientName = nameParam;
+            if (msgParam) wishMessage = msgParam;
+
+            if (dobParam) {
+                targetDate = new Date(dobParam);
+            } else {
+                // Default target date: 7 days from now
+                const defaultDate = new Date();
+                defaultDate.setDate(defaultDate.getDate() + 7);
+                defaultDate.setHours(0, 0, 0, 0);
+                targetDate = defaultDate;
+            }
+
+            updateUIInfo();
+        }
+
+        // Update basic page text
+        function updateUIInfo() {
+            document.getElementById('displayName').innerText = recipientName;
+            document.getElementById('wishName').innerText = recipientName;
+            document.getElementById('wishMessageDisplay').innerText = wishMessage;
+
+            const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            document.getElementById('displayDateText').innerText = targetDate.toLocaleDateString(undefined, options);
+
+            // Set inputs default values
+            document.getElementById('inputName').value = recipientName;
+            document.getElementById('inputMessage').value = wishMessage;
+
+            // Format target date for datetime-local input
+            const localIso = new Date(targetDate.getTime() - (targetDate.getTimezoneOffset() * 60000)).toISOString().slice(0,16);
+            document.getElementById('inputDate').value = localIso;
+        }
+
+        // Main Countdown Loop
+        function startCountdown() {
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            function updateTimer() {
+                const now = new Date().getTime();
+                const distance = targetDate.getTime() - now;
+
+                if (distance <= 0) {
+                    clearInterval(countdownInterval);
+                    showBirthdayWishScreen();
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                document.getElementById('days').innerText = String(days).padStart(2, '0');
+                document.getElementById('hours').innerText = String(hours).padStart(2, '0');
+                document.getElementById('minutes').innerText = String(minutes).padStart(2, '0');
+                document.getElementById('seconds').innerText = String(seconds).padStart(2, '0');
+            }
+
+            updateTimer();
+            countdownInterval = setInterval(updateTimer, 1000);
+        }
+
+        // Display celebratory screen when timer reaches zero or on birthday
+        function showBirthdayWishScreen() {
+            document.getElementById('countdownView').classList.add('hidden');
+            document.getElementById('wishView').classList.remove('hidden');
+            triggerCelebrationEffects();
+        }
+
+        // Trigger visual confetti and sound effects
+        function triggerCelebrationEffects() {
+            playCelebrationSound();
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+
+                // Periodic bursts
+                let count = 0;
+                if (confettiInterval) clearInterval(confettiInterval);
+                confettiInterval = setInterval(() => {
+                    if (count >= 3) {
+                        clearInterval(confettiInterval);
+                        return;
+                    }
+                    confetti({
+                        particleCount: 50,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 }
+                    });
+                    confetti({
+                        particleCount: 50,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 }
+                    });
+                    count++;
+                }, 700);
+            }
+        }
+
+        // Flip card interaction
+        function toggleCardFlip() {
+            const card = document.getElementById('cardFlip');
+            card.classList.toggle('flipped');
+        }
+
+        // Modal Controls
+        function toggleSetupModal() {
+            const modal = document.getElementById('setupModal');
+            modal.classList.toggle('hidden');
+        }
+
+        // Save Form Data and Update URL
+        function saveCustomization(event) {
+            event.preventDefault();
+            
+            const nameVal = document.getElementById('inputName').value.trim();
+            const dateVal = document.getElementById('inputDate').value;
+            const msgVal = document.getElementById('inputMessage').value.trim();
+
+            if (!nameVal || !dateVal) return;
+
+            recipientName = nameVal;
+            targetDate = new Date(dateVal);
+            if (msgVal) wishMessage = msgVal;
+
+            updateURLQuery(recipientName, targetDate, wishMessage);
+            updateUIInfo();
+
+            // Reset view to countdown
+            document.getElementById('wishView').classList.add('hidden');
+            document.getElementById('countdownView').classList.remove('hidden');
+
+            startCountdown();
+            toggleSetupModal();
+            showToast("Countdown settings updated!");
+        }
+
+        // Update URL search parameters without reloading page
+        function updateURLQuery(name, date, msg) {
+            const dateIso = date.toISOString();
+            const newUrl = `${window.location.pathname}?name=${encodeURIComponent(name)}&dob=${encodeURIComponent(dateIso)}&msg=${encodeURIComponent(msg)}`;
+            window.history.pushState({ path: newUrl }, '', newUrl);
+        }
+
+        // Copy Share Link to Clipboard
+        function copyShareableLink() {
+            updateURLQuery(recipientName, targetDate, wishMessage);
+            const fullUrl = window.location.href;
+
+            const tempInput = document.createElement('input');
+            tempInput.value = fullUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast("Share link copied! Send it to your friend.");
+            } catch (err) {
+                showToast("Failed to copy link. Please copy URL manually.");
+            }
+            
+            document.body.removeChild(tempInput);
+        }
+
+        // Display Toast Message
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = message;
+            toast.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // Floating Balloons Generator
+        function initBalloons() {
+            const container = document.getElementById('balloonContainer');
+            const colors = ['#ec4899', '#a855f7', '#6366f1', '#38bdf8', '#f43f5e', '#eab308'];
+
+            for (let i = 0; i < 15; i++) {
+                const balloon = document.createElement('div');
+                balloon.className = 'balloon';
+                
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const left = Math.random() * 100;
+                const size = 30 + Math.random() * 25;
+                const duration = 6 + Math.random() * 6;
+                const delay = Math.random() * 5;
+
+                balloon.style.left = `${left}%`;
+                balloon.style.animationDuration = `${duration}s`;
+                balloon.style.animationDelay = `${delay}s`;
+
+                balloon.innerHTML = `
+                    <svg width="${size}" height="${size * 1.2}" viewBox="0 0 50 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M25 0C11.19 0 0 11.19 0 25C0 38.81 25 55 25 55C25 55 50 38.81 50 25C50 11.19 38.81 0 25 0Z" fill="${color}"/>
+                        <path d="M25 55L23 60H27L25 55Z" fill="${color}"/>
+                    </svg>
+                `;
+
+                container.appendChild(balloon);
+            }
+        }
+    </script>
+</body>
+</html>
