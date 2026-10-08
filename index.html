@@ -231,14 +231,13 @@
 
     <!-- Header -->
     <header>
-        <div class="logo">🎂 B-Day Magic</div>
-        <button class="customize-btn" onclick="customizeUrl()">⚙️ Customize</button>
+    
     </header>
 
     <!-- Main Section -->
     <div class="main-content">
         <div class="subtitle">Counting Down To</div>
-        <div class="person-name" id="nameText">Swara</div>
+        <div class="person-name" id="nameText">Swara Birthday</div>
         <div class="target-date" id="dateText">October 9, 2026 at 12:00 AM</div>
 
         <!-- Countdown Grid -->
@@ -282,7 +281,7 @@
     <script>
         // Parameters Setup
         const urlParams = new URLSearchParams(window.location.search);
-        const name = urlParams.get('name') || "Swara";
+        const name = urlParams.get('name') || "Swara birthday";
         const dateStr = urlParams.get('date') || "2026-10-09T00:00:00";
 
         document.getElementById('nameText').innerText = name;
